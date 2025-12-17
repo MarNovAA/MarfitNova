@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarFitNova | Ascension</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- VISUAL CORE: SPACE THEME --- */
+        :root { --primary: #b829ff; --bg: #050a14; --glass: rgba(10, 20, 40, 0.95); --border: rgba(184, 41, 255, 0.2); }
+        
+        body { 
+            margin: 0; padding: 0; background-color: var(--bg); color: #aab2bd; 
+            font-family: 'Courier New', monospace; height: 100vh; overflow: hidden; user-select: none;
+            background-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%), 
+                              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            transition: background 0.5s;
+        }
+
+        /* --- NAV --- */
+        nav { position: fixed; top: 0; left: 0; width: 100%; padding: 20px 40px; box-sizing: border-box; display: flex; justify-content: space-between; z-index: 100; border-bottom: 1px solid var(--primary); background: rgba(5, 10, 20, 0.95); backdrop-filter: blur(10px); transition: border-color 0.5s; }
+        .logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 5px; cursor: pointer; color: var(--primary); text-shadow: 0 0 15px var(--primary); transition: 0.5s; text-decoration: none; }
+        ul { list-style: none; display: flex; gap: 40px; margin: 0; padding: 0; }
+        li { color: #888; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem; letter-spacing: 2px; }
+        li:hover, li.active { color: var(--primary); text-shadow: 0 0 10px var(--primary); } a { text-decoration: none; color: inherit; }
+        
+        /* --- LAYOUT --- */
+        .dashboard-grid { display: grid; grid-template-columns: 350px 1fr 400px; height: 100vh; padding-top: 80px; box-sizing: border-box; }
+        .panel { padding: 30px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--border); background: linear-gradient(90deg, rgba(0,0,0,0.4), transparent); transition: border-color 0.5s; }
+        .panel-right { border-left: 1px solid var(--border); border-right: none; background: linear-gradient(-90deg, rgba(0,0,0,0.4), transparent); overflow-y: auto; justify-content: flex-start; padding-top: 40px; }
+
+        /* STATS */
+        .stat-block { margin-bottom: 40px; }
+        .stat-label { font-size: 0.8rem; color: #888; letter-spacing: 2px; margin-bottom: 5px; display: block; }
+        .stat-value { font-size: 2.5rem; color: white; font-weight: bold; text-shadow: 0 0 20px var(--primary); transition: 0.3s; }
+        .user-id-display { font-size: 2rem; font-weight: bold; letter-spacing: 3px; color: var(--primary); text-shadow: 0 0 20px var(--primary); margin-bottom: 10px; transition: 0.5s; text-transform: uppercase; }
+        .stat-sub { font-size: 1.2rem; letter-spacing: 2px; font-weight: bold; transition: 0.3s; color: #888; }
+
+        .xp-bar-bg { width: 100%; height: 8px; background: #111; border: 1px solid #333; margin-top: 10px; overflow: hidden; }
+        .xp-bar-fill { height: 100%; width: 0%; background: var(--primary); box-shadow: 0 0 15px var(--primary); transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1), background 0.5s; }
+        .xp-text { display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 5px; color: #aaa; }
+
+        /* --- CENTER STAGE --- */
+        .center-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 0 40px; perspective: 1000px; }
+        
+        .holo-ring { 
+            width: 350px; height: 350px; 
+            border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 50%; 
+            position: relative; display: flex; justify-content: center; align-items: center; 
+            animation: pulseRing 4s infinite; transition: 0.5s; 
+            z-index: 5;
+        }
+        .holo-ring::before { content: ''; position: absolute; width: 300px; height: 300px; border: 2px dashed var(--primary); border-radius: 50%; animation: rotateRight 20s linear infinite; opacity: 0.3; transition: 0.5s; }
+        .holo-ring::after { content: ''; position: absolute; width: 330px; height: 330px; border-top: 2px solid var(--primary); border-bottom: 2px solid var(--primary); border-radius: 50%; animation: rotateLeft 15s linear infinite; opacity: 0.5; transition: 0.5s; }
+        
+        .rank-icon { font-size: 6rem; color: white; z-index: 10; text-shadow: 0 0 50px var(--primary); transition: 0.5s; position: relative; }
+        .rank-title-display { margin-top: 30px; text-align: center; }
+        .rank-name-main { font-size: 3rem; color: white; font-weight: bold; letter-spacing: 10px; text-shadow: 0 0 30px var(--primary); transition: 0.5s; }
+        
+        .system-message-box { margin-top: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--primary); padding: 15px; max-width: 500px; font-size: 0.9rem; line-height: 1.5; color: #ccc; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); transition: border-color 0.5s; }
+        .sys-label { display: block; color: var(--primary); font-weight: bold; font-size: 0.7rem; margin-bottom: 5px; letter-spacing: 2px; transition: color 0.5s; }
+
+        /* --- QUESTS --- */
+        .section-header { font-size: 0.8rem; color: #888; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; margin-top: 20px; }
+        .quest-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+        .quest-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.4); border-left: 3px solid #333; transition: 0.2s; cursor: pointer; user-select: none; }
+        .quest-item.main-quest { border-left-color: var(--primary); background: rgba(255, 255, 255, 0.05); } 
+        .quest-item.side-quest { border-left-color: #888; } 
+        
+        /* STATE STYLES */
+        .quest-item.completed { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+        .quest-item.locked { opacity: 0.6; cursor: not-allowed; border-left-color: #555; background: rgba(0,0,0,0.2); }
+        .quest-item.locked:hover { background: rgba(0,0,0,0.2); }
+
+        .quest-label { font-size: 0.85rem; color: white; display: flex; flex-direction: column; gap: 2px; }
+        .quest-xp { font-size: 0.7rem; color: var(--primary); font-weight: bold; }
+        
+        .check-box { width: 22px; height: 22px; border: 1px solid #555; display: flex; justify-content: center; align-items: center; background: #000; }
+        .check-box.checked { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 15px var(--primary); }
+        .check-box.checked::after { content: '✔'; color: black; font-size: 14px; font-weight: bold; }
+
+        /* --- ANIMATION LAYERS --- */
+        #flashbang {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 20000; opacity: 0; pointer-events: none;
+            transition: opacity 0.1s ease-out;
+        }
+
+        #opticalFlare {
+            position: absolute; top: 50%; left: 0; width: 100%; height: 0px;
+            background: white;
+            box-shadow: 0 0 50px 10px white;
+            transform: translateY(-50%);
+            opacity: 0;
+            z-index: 50;
+        }
+
+        #rankUpTextOverlay {
+            position: fixed; top: 15%; left: 0; width: 100%;
+            z-index: 10001; display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        body.animating #rankUpTextOverlay { display: flex; }
+
+        .cinematic-text {
+            font-size: 1.5rem; color: #aaa; font-weight: 700; letter-spacing: 8px;
+            opacity: 0; text-transform: uppercase; margin-bottom: 10px;
+        }
+        .cinematic-sub {
+            font-size: 5rem; color: white; letter-spacing: 15px; opacity: 0;
+            font-weight: 900; text-transform: uppercase;
+            text-shadow: 0 0 80px white;
+        }
+
+        /* --- KEYFRAMES --- */
+        .anim-glitch { animation: glitchAnim 0.6s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
+        @keyframes glitchAnim {
+            0% { transform: scale(1); filter: brightness(1) blur(0px); opacity: 1; }
+            50% { transform: scale(1.1); filter: brightness(2) blur(2px); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .anim-flare { animation: flareAnim 0.4s ease-out forwards; }
+        @keyframes flareAnim {
+            0% { height: 1px; width: 0%; opacity: 1; left: 50%; }
+            30% { height: 2px; width: 100%; opacity: 1; left: 0; background: white; }
+            50% { height: 100vh; width: 100%; opacity: 1; background: white; } 
+            100% { height: 100vh; width: 100%; opacity: 0; background: white; } 
+        }
+
+        .anim-reveal-fade { animation: revealFade 1.5s ease-out forwards; }
+        @keyframes revealFade {
+            0% { opacity: 0; transform: scale(1.5); filter: blur(10px); }
+            100% { opacity: 1; transform: scale(1); filter: blur(0px); text-shadow: 0 0 50px var(--new-color); }
+        }
+
+        .anim-text-slide { animation: textSlide 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes textSlide {
+            0% { opacity: 0; transform: translateY(-50px); letter-spacing: 30px; }
+            100% { opacity: 1; transform: translateY(0); letter-spacing: 15px; }
+        }
+
+        /* --- LEVEL UP MODAL (Transparent & Clean) --- */
+        .lvl-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); /* Dark transparent skin */
+            z-index: 15000;
+            display: none; justify-content: center; align-items: center;
+            flex-direction: column; animation: fadeIn 0.3s;
+            backdrop-filter: blur(8px);
+        }
+        .lvl-overlay.show { display: flex; }
+        
+        .lvl-text-large {
+            font-size: 3rem; font-weight: 900; color: white;
+            letter-spacing: 5px; margin-bottom: 20px;
+            text-shadow: 0 0 40px var(--primary);
+            text-transform: uppercase;
+            text-align: center;
+            animation: textFloat 0.5s ease-out;
+        }
+        @keyframes textFloat { 
+            0% { transform: translateY(30px); opacity: 0; } 
+            100% { transform: translateY(0); opacity: 1; } 
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* BUTTONS ON LEFT */
+        .controls-area { position: fixed; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 200; }
+        .ctrl-btn { background: black; border: 1px solid #333; color: #555; padding: 8px 15px; cursor: pointer; font-family: inherit; font-size: 0.7rem; font-weight: bold; }
+        .ctrl-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        .loot-popup { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #ffd700; padding: 15px 30px; color: #ffd700; font-weight: bold; letter-spacing: 2px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.2); opacity: 0; transition: 0.5s; z-index: 500; }
+        .loot-popup.show { opacity: 1; bottom: 50px; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.5s; }
+        .overlay.visible { opacity: 1; }
+        .input-box { width: 500px; background: #050a1c; border: 2px solid var(--primary); padding: 30px; position: relative; box-shadow: 0 0 50px rgba(0,229,255,0.2); display: flex; flex-direction: column; gap: 15px; }
+        .input-title { color: white; font-size: 1.5rem; letter-spacing: 3px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .data-input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: white; font-family: inherit; box-sizing: border-box; }
+        .data-input:focus { border-color: var(--primary); outline: none; }
+        .file-upload-label { display: block; padding: 10px; background: #111; color: #888; border: 1px dashed #555; text-align: center; cursor: pointer; font-size: 0.8rem; }
+        .file-upload-label:hover { border-color: var(--primary); color: var(--primary); }
+        .confirm-data-btn { width: 100%; padding: 12px; background: var(--primary); color: black; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .confirm-data-btn:hover { background: white; box-shadow: 0 0 20px white; }
+        .close-modal-btn { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; color: #555; cursor: pointer; }
+        .close-modal-btn:hover { color: white; }
+
+        @keyframes rotateRight { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotateLeft { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        @keyframes pulseRing { 0% { opacity: 0.5; } 50% { opacity: 1; border-color: rgba(255,255,255,0.2); } 100% { opacity: 0.5; } }
+        
+        /* Rank Specific Animations */
+        .anim-nova { animation: pulse-burst 2s infinite; }
+        .anim-supernova { animation: flicker-fire 0.1s infinite alternate; }
+        .anim-quasar { animation: radar-spin 2s linear infinite; }
+        .anim-singularity { animation: implode-rotate 10s linear infinite; }
+        .anim-eternal { animation: galaxy-spin 20s linear infinite; }
+
+        @keyframes pulse-burst { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 80px var(--primary); } 100% { transform: scale(1); opacity: 0.8; } }
+        @keyframes flicker-fire { 0% { opacity: 0.8; transform: scale(1); } 100% { opacity: 1; transform: scale(1.05) translateX(1px); text-shadow: 0 0 40px var(--primary); } }
+        @keyframes radar-spin { 0% { transform: scale(1) rotate(0deg); opacity: 0.8; } 50% { transform: scale(1.1) rotate(180deg); opacity: 1; } 100% { transform: scale(1) rotate(360deg); opacity: 0.8; } }
+        @keyframes implode-rotate { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(0.9); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes galaxy-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* --- TUTORIAL SYSTEM OVERLAY --- */
+        #tutorialOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 25000;
+            display: none; /* Active via JS */
+        }
+        
+        .tutorial-box {
+            position: absolute; width: 350px;
+            background: rgba(5, 10, 25, 0.95);
+            border: 2px solid #00e5ff;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+            padding: 20px;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            z-index: 25001;
+            transition: all 0.5s ease;
+        }
+        
+        .tutorial-header {
+            color: #00e5ff; font-weight: bold; letter-spacing: 2px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            padding-bottom: 10px; margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        .tutorial-body { font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; }
+        
+        .tut-btn {
+            background: #00e5ff; color: black; border: none;
+            padding: 10px 20px; font-weight: bold; cursor: pointer;
+            float: right; transition: 0.3s;
+        }
+        .tut-btn:hover { background: white; box-shadow: 0 0 15px white; }
+
+        /* HIGHLIGHT CLASS */
+        .system-highlight {
+            position: relative; z-index: 25002;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.8); /* Dim everything else */
+            border: 2px solid #00e5ff !important;
+            transition: 0.5s;
+        }
+    </style>
+    
+    <script>
+        (function() {
+            function getUserPrefix() { return localStorage.getItem('mfn_user') ? (localStorage.getItem('mfn_user') + '_') : 'GUEST_'; }
+            let prefix = getUserPrefix();
+            let lvl = parseInt(localStorage.getItem(prefix + 'mfn_level') || '1');
+            let color = '#b829ff'; 
+            if(lvl >= 21) color = '#ffd700'; 
+            else if(lvl >= 16) { color = '#6a00ff'; document.documentElement.classList.add('rank-singularity'); }
+            else if(lvl >= 11) color = '#00e5ff'; 
+            else if(lvl >= 6) color = '#ff4400'; 
+            document.documentElement.style.setProperty('--primary', color);
+        })();
+    </script>
+</head>
+<body>
+
+    <div id="tutorialOverlay">
+        <div id="tutorialBox" class="tutorial-box">
+            <div class="tutorial-header">SYSTEM GUIDE // <span id="tutStep">1/4</span></div>
+            <div class="tutorial-body" id="tutText">WELCOME, PLAYER. THIS IS YOUR SYSTEM HUB.</div>
+            <button class="tut-btn" onclick="nextTutorialStep()">NEXT >></button>
+        </div>
+    </div>
+
+    <nav>
+        <a href="index.html" class="logo">MFN</a>
+        <ul>
+            <li class="active">RANKS</li>
+            <li id="labNavLink" onclick="window.location.href='lab.html'" style="color: #00e5ff;">LAB</li>
+            <li><a href="plans.html">PLANS</a></li>
+        </ul>
+    </nav>
+
+    <div id="rankUpOverlay">
+        <div id="opticalFlare"></div>
+    </div>
+
+    <div id="rankUpTextOverlay">
+        <div id="animText" class="cinematic-text">STATUS UPDATE</div>
+        <div id="animSub" class="cinematic-sub"></div>
+    </div>
+    
+    <div id="levelUpOverlay" class="lvl-overlay" onclick="this.classList.remove('show')">
+        <div class="lvl-text-large" id="levelUpText"></div>
+    </div>
+    
+    <div id="questInputModal" class="overlay" style="z-index: 3000;">
+        <div class="input-box">
+            <span class="close-modal-btn" onclick="closeInputModal()">&times;</span>
+            <div class="input-title">INTEL GATHERING</div>
+            <p style="color:#888; font-size:0.8rem; margin:0;">Input source material data to claim XP.</p>
+            <input type="text" id="bookTitle" class="data-input" placeholder="Book / Article Title">
+            <textarea id="bookSummary" class="data-input" rows="4" placeholder="Summary / Key Takeaways..."></textarea>
+            <label class="file-upload-label">
+                <i class="fa-solid fa-camera"></i> UPLOAD PHOTO PROOF (OPTIONAL)
+                <input type="file" id="bookPhoto" accept="image/*" capture="environment" style="display:none;" onchange="document.querySelector('.file-upload-label').style.borderColor='#00ff00'">
+            </label>
+            <button class="confirm-data-btn" onclick="submitBookQuest()">UPLOAD DATA & CLAIM</button>
+        </div>
+    </div>
+
+    <div id="lootPopup" class="loot-popup">
+        <i class="fa-solid fa-gift"></i> REWARD CLAIMED: <span id="lootAmt">0</span> XP
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="panel">
+            <div class="stat-block">
+                <span class="stat-label">SUBJECT IDENTITY</span>
+                <span class="user-id-display" id="userDisplay">NOVA-1</span>
+            </div>
+            <div class="stat-block">
+                <span class="stat-label">OPERATIVE LEVEL</span>
+                <span class="stat-value" id="dispLevel">1</span>
+            </div>
+            <div class="stat-block" id="xpBlock">
+                <span class="stat-label">XP PROGRESS</span>
+                <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill"></div></div>
+                <div class="xp-text"><span id="xpCur">0</span> <span id="xpMax">/ 200 XP</span></div>
+            </div>
+            <div class="stat-block">
+                <span class="stat-label">NEXT RANK</span>
+                <span class="stat-sub" id="nextRankDisp" style="color: #888;">SUPERNOVA</span>
+            </div>
+        </div>
+        <div class="center-stage">
+            <div id="holoRing" class="holo-ring">
+                <i id="rankIcon" class="fa-solid fa-burst rank-icon anim-nova"></i>
+            </div>
+            <div class="rank-title-display">
+                <div class="rank-name-main" id="rankNameMain">NOVA</div>
+                <div class="system-message-box">
+                    <span class="sys-label">SYSTEM NOTICE</span>
+                    <span id="systemMsg">...</span>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-right">
+            <div class="section-header">MAIN PROTOCOLS</div>
+            <ul class="quest-list" id="mainQuestList"></ul>
+            <div class="section-header">SIDE MISSIONS</div>
+            <ul class="quest-list" id="sideQuestList"></ul>
+        </div>
+    </div>
+
+    <div class="controls-area">
+        <button class="ctrl-btn" onclick="addXP(150)">[DEV] +150 XP</button>
+        <button class="ctrl-btn" onclick="devRankUp()">[DEV] INSTANT RANK UP</button>
+        <button class="ctrl-btn" onclick="resetSim()">FACTORY RESET</button>
+    </div>
+
+    <script>
+        function getUserPrefix() { return localStorage.getItem('mfn_user') ? (localStorage.getItem('mfn_user') + '_') : 'GUEST_'; }
+        function save(key, val) { localStorage.setItem(getUserPrefix() + key, val); }
+        function load(key) { return localStorage.getItem(getUserPrefix() + key); }
+
+        // AUDIO SYSTEM - Uses local file 'solo_leveling_system.mp3'
+        // If file not found, no error, just silent
+        let systemAudio = null;
+        try { systemAudio = new Audio('solo_leveling_system.mp3'); systemAudio.volume = 0.6; } catch(e) {}
+
+        let level = 1; let xp = 0; let completedQuests = []; 
+        
+        // --- FINALIZED ICONS ---
+        const ranks = [
+            { name: "NOVA", icon: "fa-burst", color: "#b829ff", anim: "anim-nova", msg: "Motivation is volatile. Structure is permanent.", introSub: "NOVA ACQUIRED" },
+            { name: "SUPERNOVA", icon: "fa-meteor", color: "#ff4400", anim: "anim-supernova", msg: "Critical mass achieved. Find Control.", introSub: "SUPERNOVA ACQUIRED" },
+            { name: "PULSAR", icon: "fa-bolt", color: "#00e5ff", anim: "anim-quasar", msg: "High frequency output. Unstoppable energy.", introSub: "PULSAR ACQUIRED" },
+            { name: "SINGULARITY", icon: "fa-gem", color: "#6a00ff", anim: "anim-singularity", msg: "Infinite density. You are the Void.", introSub: "SINGULARITY ACQUIRED" },
+            { name: "ETERNAL", icon: "fa-infinity", color: "#ffd700", anim: "anim-eternal", msg: "You are the space itself. Limitless.", introSub: "ETERNAL ACQUIRED" }
+        ];
+        
+        // LOCKED MAIN QUESTS (Requires Lab Completion)
+        const mainQuests = [{ id: "protocol", label: "Complete Workout", xp: 50, sub: "System Protocol" }, { id: "water", label: "Hydration 3.8L+", xp: 50, sub: "Hydro-Lock" }, { id: "sleep", label: "Sleep 8h+", xp: 50, sub: "Recovery" }, { id: "diet", label: "Diet Goal Achieved", xp: 50, sub: "Metabolic Engine" }];
+        
+        // MANUAL SIDE QUESTS
+        const sideQuests = [{ id: "read", label: "Read & Summarize", xp: 20, sub: "Intel Gathering", input: true }, { id: "study", label: "Deep Work (1h)", xp: 20, sub: "Cognitive Load" }, { id: "phone", label: "No Phone (>2h)", xp: 20, sub: "Dopamine Fast" }];
+
+        window.onload = function() {
+            let savedUser = localStorage.getItem('mfn_user') || "NOVA-1";
+            document.getElementById("userDisplay").innerText = savedUser.toUpperCase();
+            checkDailyReset(); loadData(); processPendingClaims(); renderQuests(); updateUI();
+            
+            // CHECK TUTORIAL
+            if(!localStorage.getItem(getUserPrefix() + 'mfn_tutorial_done')) {
+                setTimeout(runTutorial, 1000);
+            }
+        };
+
+        // --- TUTORIAL SYSTEM ---
+        let tutStep = 0;
+        const tutSteps = [
+            { el: 'holoRing', text: "GREETINGS, PLAYER.<br>THIS IS YOUR STATUS HUB. YOUR CURRENT RANK IS DISPLAYED HERE." },
+            { el: 'xpBlock', text: "EXPERIENCE POINTS (XP) ARE REQUIRED TO EVOLVE.<br>FILL THIS BAR TO TRIGGER A RANK UP EVENT." },
+            { el: 'mainQuestList', text: "DAILY PROTOCOLS.<br>NOTE: THESE ARE LOCKED. YOU MUST COMPLETE THEM IN THE LAB." },
+            { el: 'labNavLink', text: "THE LAB IS YOUR WORKSTATION.<br>GO HERE TO LOG WORKOUTS, DIET, AND BIO-METRICS." }
+        ];
+
+        function runTutorial() {
+            document.getElementById("tutorialOverlay").style.display = "block";
+            showStep(0);
+        }
+
+        function showStep(index) {
+            // Remove highlight from prev
+            if(index > 0) document.getElementById(tutSteps[index-1].el).classList.remove("system-highlight");
+            
+            if(index >= tutSteps.length) {
+                // END
+                document.getElementById("tutorialOverlay").style.display = "none";
+                localStorage.setItem(getUserPrefix() + 'mfn_tutorial_done', 'true');
+                return;
+            }
+
+            let step = tutSteps[index];
+            let target = document.getElementById(step.el);
+            let box = document.getElementById("tutorialBox");
+            
+            // Highlight
+            target.classList.add("system-highlight");
+            
+            // Position Box Logic (Simple centering or offset)
+            let rect = target.getBoundingClientRect();
+            box.style.top = (rect.bottom + 20) + "px";
+            box.style.left = (rect.left) + "px";
+            
+            // Boundary Check
+            if(rect.bottom > window.innerHeight - 200) box.style.top = (rect.top - 200) + "px";
+            if(rect.left > window.innerWidth - 400) box.style.left = (window.innerWidth - 400) + "px";
+
+            document.getElementById("tutText").innerHTML = step.text;
+            document.getElementById("tutStep").innerText = (index+1) + "/" + tutSteps.length;
+            tutStep = index;
+        }
+
+        function nextTutorialStep() {
+            if(systemAudio) systemAudio.play().catch(e=>{});
+            showStep(tutStep + 1);
+        }
+
+        function checkDailyReset() { 
+            let today = new Date().toDateString(); 
+            let lastReset = load('mfn_ranks_last_reset'); 
+            if (lastReset !== today) { 
+                completedQuests = []; 
+                save('mfn_ranks_last_reset', today); 
+                save('mfn_completed_quests', JSON.stringify([])); 
+            } 
+        }
+        
+        function getXpReq(lvl) { let rankIndex = Math.floor((lvl - 1) / 5); let increment = 100 + (rankIndex * 50); return 200 + ((lvl - 1) * increment); }
+        
+        function loadData() { 
+            if(load('mfn_level')) level = parseInt(load('mfn_level')); else level = 1;
+            if(load('mfn_xp')) xp = parseInt(load('mfn_xp')); else xp = 0;
+            if(load('mfn_completed_quests')) completedQuests = JSON.parse(load('mfn_completed_quests')); else completedQuests = [];
+        }
+        
+        function saveData() { save('mfn_level', level); save('mfn_xp', xp); save('mfn_completed_quests', JSON.stringify(completedQuests)); }
+        
+        function processPendingClaims() {
+            let pending = load('mfn_pending_claims'); 
+            if(pending) {
+                let claims = JSON.parse(pending); let totalGain = 0;
+                claims.forEach(claim => { 
+                    if(!completedQuests.includes(claim.key)) { 
+                        completedQuests.push(claim.key); 
+                        totalGain += claim.xp; 
+                    } 
+                });
+                if(totalGain > 0) { 
+                    addXP(totalGain); 
+                    showLootPopup(totalGain); 
+                }
+                saveData();
+                let prefix = getUserPrefix();
+                localStorage.removeItem(prefix + 'mfn_pending_claims'); 
+            }
+        }
+
+        function renderQuests() {
+            let mainList = document.getElementById("mainQuestList"); let sideList = document.getElementById("sideQuestList");
+            mainList.innerHTML = ""; sideList.innerHTML = "";
+            mainQuests.forEach(q => { mainList.innerHTML += createQuestHTML(q, completedQuests.includes(q.id), false); });
+            sideQuests.forEach(q => { sideList.innerHTML += createQuestHTML(q, completedQuests.includes(q.id), true); });
+        }
+
+        function createQuestHTML(q, isDone, isSide) {
+            let isLocked = !isSide && !isDone; 
+            let clickAction = "";
+            if (isDone) clickAction = "";
+            else if (isSide) clickAction = (q.input ? `openInputModal('${q.id}', ${q.xp})` : `completeManual('${q.id}', ${q.xp})`);
+            else clickAction = "alert('ACCESS LAB TO COMPLETE THIS PROTOCOL')";
+
+            let cssClass = isSide ? 'side-quest' : 'main-quest';
+            if(isLocked) cssClass += ' locked';
+
+            let icon = "";
+            if (isDone) icon = `<div class="check-box checked"></div>`;
+            else if (isLocked) icon = `<i class="fa-solid fa-lock" style="color:#555; font-size:0.8rem;"></i>`;
+            else icon = `<div class="check-box"></div>`;
+
+            return `<li class="quest-item ${cssClass} ${isDone ? 'completed' : ''}" onclick="${clickAction}"><div class="quest-label"><span>${q.label}</span><span class="quest-sub">${q.sub}</span></div><div style="text-align:right;"><span class="quest-xp">+${q.xp} XP</span>${icon}</div></li>`;
+        }
+
+        let pendingQuestId = null; let pendingQuestXP = 0;
+        function openInputModal(id, xp) { pendingQuestId = id; pendingQuestXP = xp; document.getElementById("questInputModal").style.display = "flex"; setTimeout(() => document.getElementById("questInputModal").classList.add("visible"), 10); }
+        function closeInputModal() { document.getElementById("questInputModal").classList.remove("visible"); setTimeout(() => document.getElementById("questInputModal").style.display = "none", 500); document.getElementById("bookTitle").value = ""; document.getElementById("bookSummary").value = ""; document.getElementById("bookPhoto").value = ""; document.querySelector('.file-upload-label').style.borderColor = "#555"; }
+        function submitBookQuest() {
+            let title = document.getElementById("bookTitle").value; let summary = document.getElementById("bookSummary").value; let photo = document.getElementById("bookPhoto").value;
+            if(!title) { alert("BOOK TITLE REQUIRED."); return; }
+            if(!summary && !photo) { alert("PROOF REQUIRED: WRITE SUMMARY OR UPLOAD PHOTO."); return; }
+            let logs = JSON.parse(load('mfn_book_logs') || "[]"); logs.push({date: new Date().toDateString(), title: title, summary: summary || "PHOTO PROOF"}); save('mfn_book_logs', JSON.stringify(logs));
+            completeManual(pendingQuestId, pendingQuestXP); closeInputModal();
+        }
+
+        function completeManual(id, amount) { if(completedQuests.includes(id)) return; completedQuests.push(id); addXP(amount); saveData(); renderQuests(); }
+        
+        function addXP(amount) { 
+            xp += amount; 
+            let req = getXpReq(level); 
+            let oldLevel = level;
+            while(xp >= req) { xp -= req; level++; req = getXpReq(level); } 
+            updateUI(); saveData(); 
+            let oldRankIdx = Math.floor((oldLevel - 1) / 5);
+            let newRankIdx = Math.floor((level - 1) / 5);
+            if (newRankIdx > oldRankIdx) { setTimeout(() => { triggerRankUpSequence(oldRankIdx, newRankIdx); }, 100); } 
+            else if (level > oldLevel) { showLevelUpModal(level); }
+        }
+
+        function showLevelUpModal(newLvl) {
+            let savedUser = localStorage.getItem('mfn_user') || "NOVA-1";
+            let overlay = document.getElementById("levelUpOverlay");
+            let text = document.getElementById("levelUpText");
+            if(systemAudio) { systemAudio.currentTime = 0; systemAudio.play().catch(e => console.log("Audio Error:", e)); }
+            text.innerHTML = `COMMANDER <span style="color:var(--primary)">${savedUser.toUpperCase()}</span><br>HAS REACHED LVL ${newLvl}`;
+            overlay.classList.add("show");
+            setTimeout(() => { overlay.classList.remove("show"); }, 3000);
+        }
+
+        function devRankUp() {
+            let currentRankIdx = Math.floor((level - 1) / 5);
+            let nextRankIdx = currentRankIdx + 1;
+            if(nextRankIdx >= ranks.length) return alert("MAX RANK REACHED");
+            let targetLevel = (nextRankIdx * 5) + 1;
+            let totalXpToGrant = (getXpReq(level) - xp); 
+            for(let l = level + 1; l < targetLevel; l++) { totalXpToGrant += getXpReq(l); }
+            addXP(totalXpToGrant);
+        }
+
+        function triggerRankUpSequence(oldIdx, newIdx) {
+            let newR = ranks[newIdx]; let oldR = ranks[oldIdx] || ranks[0];
+            let iconEl = document.getElementById("rankIcon"); let flare = document.getElementById("opticalFlare");
+            let text = document.getElementById("animText"); let sub = document.getElementById("animSub");
+            let rankNameMain = document.getElementById("rankNameMain");
+            document.documentElement.style.setProperty('--old-color', oldR.color);
+            document.documentElement.style.setProperty('--new-color', newR.color);
+            sub.innerText = "YOU REACHED " + newR.name + " RANK";
+            sub.style.color = newR.color; sub.style.textShadow = `0 0 50px ${newR.color}`;
+            rankNameMain.style.opacity = 0;
+            document.body.classList.add("animating");
+            iconEl.classList.add("anim-glitch");
+            setTimeout(() => {
+                flare.classList.add("anim-flare");
+                setTimeout(() => {
+                    document.documentElement.style.setProperty('--primary', newR.color);
+                    updateUI(); 
+                    iconEl.classList.remove("anim-glitch"); iconEl.classList.add("anim-reveal-fade");
+                    text.classList.add("anim-text-slide"); sub.classList.add("anim-text-slide");
+                    setTimeout(() => {
+                        document.body.classList.remove("animating");
+                        flare.classList.remove("anim-flare");
+                        iconEl.classList.remove("anim-reveal-fade");
+                        text.classList.remove("anim-text-slide"); sub.classList.remove("anim-text-slide");
+                        rankNameMain.style.opacity = 1;
+                    }, 3000);
+                }, 150); 
+            }, 600); 
+        }
+
+        function updateUI() {
+            let req = getXpReq(level);
+            document.getElementById("dispLevel").innerText = level; document.getElementById("xpCur").innerText = xp; document.getElementById("xpMax").innerText = "/ " + req + " XP";
+            let pct = (xp / req) * 100; document.getElementById("xpFill").style.width = pct + "%";
+            let rIndex = Math.floor((level - 1) / 5); if(rIndex >= ranks.length) rIndex = ranks.length - 1; let r = ranks[rIndex];
+            if(!document.body.classList.contains("animating") || document.getElementById("opticalFlare").classList.contains("anim-flare")) {
+                 document.documentElement.style.setProperty('--primary', r.color);
+                 document.getElementById("rankNameMain").innerText = r.name; document.getElementById("rankNameMain").style.textShadow = `0 0 30px ${r.color}`;
+                 let iconElement = document.getElementById("rankIcon"); 
+                 iconElement.className = `fa-solid ${r.icon} rank-icon ${r.anim}`; 
+                 iconElement.style.color = r.color; iconElement.style.textShadow = `0 0 50px ${r.color}`;
+            }
+            document.getElementById("systemMsg").innerHTML = r.msg;
+            let nextIndex = rIndex + 1; let nextEl = document.getElementById("nextRankDisp");
+            if(nextIndex < ranks.length) { let nextRank = ranks[nextIndex]; nextEl.innerText = nextRank.name; nextEl.style.color = nextRank.color; nextEl.style.textShadow = `0 0 10px ${nextRank.color}`; } else { nextEl.innerText = "MAX RANK"; nextEl.style.color = "#ffd700"; }
+        }
+
+        function showLootPopup(amount) { let pop = document.getElementById("lootPopup"); document.getElementById("lootAmt").innerText = amount; pop.classList.add("show"); setTimeout(() => pop.classList.remove("show"), 3000); }
+        function closeInputModal() { document.getElementById("questInputModal").classList.remove("visible"); setTimeout(() => document.getElementById("questInputModal").style.display = "none", 500); }
+        function resetSim() { 
+            if(confirm("FACTORY RESET: CLEAR DATA FOR " + getUserPrefix().replace('_','') + "?")) { 
+                let prefix = getUserPrefix();
+                Object.keys(localStorage).forEach(key => { if(key.startsWith(prefix)) localStorage.removeItem(key); });
+                location.reload(); 
+            } 
+        }
+    </script>
+</body>
+</html>
